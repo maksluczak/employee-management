@@ -1,5 +1,6 @@
 package io.github.maksluczak.ems.employee;
 
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,9 +25,10 @@ public class EmployeeController {
         return employeeService.getEmployeeById(id);
     }
 
-    @PostMapping
-    public void addNewEmployee(@RequestBody Employee employee) {
-        employeeService.insertEmployee(employee);
+    @GetMapping("/me")
+    public Employee getMyProfile(Authentication authentication) {
+        String username = authentication.getName();
+        return employeeService.getEmployeeByUsername(username);
     }
 
     @PutMapping("{id}")

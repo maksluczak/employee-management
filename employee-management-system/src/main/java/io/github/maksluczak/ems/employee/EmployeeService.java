@@ -1,5 +1,7 @@
 package io.github.maksluczak.ems.employee;
 
+import io.github.maksluczak.ems.user.User;
+import io.github.maksluczak.ems.user.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -8,9 +10,11 @@ import java.util.List;
 public class EmployeeService {
 
     private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
 
-    public EmployeeService(EmployeeRepository employeeRepository) {
+    public EmployeeService(EmployeeRepository employeeRepository, UserRepository userRepository) {
         this.employeeRepository = employeeRepository;
+        this.userRepository = userRepository;
     }
 
     public List<Employee> getAllEmployees() {
@@ -22,8 +26,10 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException(id + " does not found"));
     }
 
-    public void insertEmployee(Employee employee) {
-        employeeRepository.save(employee);
+    public Employee getEmployeeByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+        return user.getEmployee();
     }
 
     public void updateEmployee(Integer id, Employee newEmployee) {
