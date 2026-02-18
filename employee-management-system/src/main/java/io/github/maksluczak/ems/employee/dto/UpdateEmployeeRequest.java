@@ -1,4 +1,4 @@
-package io.github.maksluczak.ems.auth;
+package io.github.maksluczak.ems.employee.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,8 +9,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class AuthenticationResponse {
+public class UpdateEmployeeRequest {
 
-    private String token;
-
+    private String position;
 }

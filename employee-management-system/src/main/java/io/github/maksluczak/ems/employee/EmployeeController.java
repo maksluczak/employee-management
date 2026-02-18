@@ -1,5 +1,10 @@
 package io.github.maksluczak.ems.employee;
 
+import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
+import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
+import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -16,28 +21,42 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public List<Employee> getEmployees() {
-        return employeeService.getAllEmployees();
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<EmployeeResponse>> getEmployees() {
+        return ResponseEntity.ok(employeeService.getAllEmployees());
     }
 
     @GetMapping("{id}")
-    public Employee getEmployeeById(@PathVariable Integer id) {
-        return employeeService.getEmployeeById(id);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable Integer id) {
+        return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
     @GetMapping("/me")
-    public Employee getMyProfile(Authentication authentication) {
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    public ResponseEntity<EmployeeResponse> getMyProfile(Authentication authentication) {
         String username = authentication.getName();
-        return employeeService.getEmployeeByUsername(username);
+        return ResponseEntity.ok(employeeService.getEmployeeByUsername(username));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> createEmployee(@RequestBody RegisterEmployeeRequest request) {
+        employeeService.insertEmployee(request);
+        return ResponseEntity.ok().build();
     }
 
     @PutMapping("{id}")
-    public void updateEmployee(@PathVariable Integer id, @RequestBody Employee newEmployee) {
-        employeeService.updateEmployee(id, newEmployee);
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> updateEmployee(@PathVariable Integer id, @RequestBody UpdateEmployeeRequest request) {
+        employeeService.updateEmployee(id, request);
+        return ResponseEntity.ok().build();
     }
 
     @DeleteMapping("{id}")
-    public void deleteEmployee(@PathVariable Integer id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Integer id) {
         employeeService.deleteEmployee(id);
+        return ResponseEntity.ok().build();
     }
 }

@@ -1,10 +1,14 @@
 package io.github.maksluczak.ems.auth;
 
+import io.github.maksluczak.ems.auth.dto.AuthenticationRequest;
+import io.github.maksluczak.ems.auth.dto.AuthenticationResponse;
+import io.github.maksluczak.ems.auth.dto.RegisterRequest;
 import io.github.maksluczak.ems.config.JwtService;
 import io.github.maksluczak.ems.employee.Employee;
 import io.github.maksluczak.ems.user.Role;
 import io.github.maksluczak.ems.user.User;
 import io.github.maksluczak.ems.user.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -25,12 +29,16 @@ public class AuthenticationService {
         this.authenticationManager = authenticationManager;
     }
 
-    public AuthenticationResponse register(RegisterRequest request) {
+    public void registerAdmin(RegisterRequest request) {
+        if(repository.existsByRole(Role.ADMIN)) {
+            throw new IllegalStateException("Admin already exists");
+        }
+
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.EMPLOYEE)
+                .role(Role.ADMIN)
                 .build();
 
         Employee employee = Employee.builder()
@@ -45,12 +53,6 @@ public class AuthenticationService {
         employee.setUser(user);
 
         repository.save(user);
-
-        var jwtToken = service.generateToken(user);
-
-        return AuthenticationResponse.builder()
-                .token(jwtToken)
-                .build();
     }
 
     public AuthenticationResponse authenticate(AuthenticationRequest request) {
@@ -64,7 +66,21 @@ public class AuthenticationService {
         var user = repository.findByUsername(request.getUsername())
                 .orElseThrow();
 
-        var jwtToken = service.generateToken(user);
+        String jwtToken = service.generateToken(user);
+
+        return AuthenticationResponse.builder()
+                .token(jwtToken)
+                .build();
+    }
+
+    public AuthenticationResponse refresh(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        String jwtToken = authHeader.substring(7);
+
+        String username = service.extractUsername(jwtToken);
+        User user = repository.findByUsername(username).orElseThrow(() -> new IllegalStateException("User not found"));
+
+        String newToken = service.generateToken(user);
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
