@@ -2,6 +2,7 @@ package io.github.maksluczak.ems.employee;
 
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
+import io.github.maksluczak.ems.employee.dto.UpdateEmployeeProfileImageRequest;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
 import io.github.maksluczak.ems.user.Role;
 import io.github.maksluczak.ems.user.User;
@@ -94,6 +95,14 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException("Employee not found"));
 
         employee.setPosition(request.getPosition());
+        employeeRepository.save(employee);
+    }
+
+    public void updateEmployeesProfileImage(Integer id, UpdateEmployeeProfileImageRequest request) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Employee not found"));
+
+        employee.setProfileImageUrl(request.getProfileImageUrl());
         employeeRepository.save(employee);
     }
 
