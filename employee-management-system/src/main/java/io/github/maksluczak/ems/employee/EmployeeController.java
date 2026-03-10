@@ -3,6 +3,7 @@ package io.github.maksluczak.ems.employee;
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -41,14 +42,14 @@ public class EmployeeController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> createEmployee(@RequestBody RegisterEmployeeRequest request) {
+    public ResponseEntity<Void> createEmployee(@Valid @RequestBody RegisterEmployeeRequest request) {
         employeeService.insertEmployee(request);
         return ResponseEntity.ok().build();
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> updateEmployee(@PathVariable Integer id, @RequestBody UpdateEmployeeRequest request) {
+    public ResponseEntity<Void> updateEmployee(@PathVariable Integer id, @Valid @RequestBody UpdateEmployeeRequest request) {
         employeeService.updateEmployee(id, request);
         return ResponseEntity.ok().build();
     }

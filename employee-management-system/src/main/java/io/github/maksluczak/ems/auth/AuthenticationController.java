@@ -4,6 +4,7 @@ import io.github.maksluczak.ems.auth.dto.AuthenticationRequest;
 import io.github.maksluczak.ems.auth.dto.AuthenticationResponse;
 import io.github.maksluczak.ems.auth.dto.RegisterRequest;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,13 +22,13 @@ public class AuthenticationController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<Void> registerAdmin(@RequestBody RegisterRequest request) {
+    public ResponseEntity<Void> registerAdmin(@Valid @RequestBody RegisterRequest request) {
         service.registerAdmin(request);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponse> authenticate(@RequestBody AuthenticationRequest request) {
+    public ResponseEntity<AuthenticationResponse> authenticate(@Valid @RequestBody AuthenticationRequest request) {
         return ResponseEntity.ok(service.authenticate(request));
     }
 
