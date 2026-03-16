@@ -2,15 +2,19 @@ package io.github.maksluczak.ems.employee;
 
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
-import io.github.maksluczak.ems.employee.dto.UpdateEmployeeProfileImageRequest;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
+import io.github.maksluczak.ems.s3.S3Buckets;
+import io.github.maksluczak.ems.s3.S3Service;
 import io.github.maksluczak.ems.user.Role;
 import io.github.maksluczak.ems.user.User;
 import io.github.maksluczak.ems.user.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class EmployeeService {
@@ -18,11 +22,18 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final S3Service s3Service;
+    private final S3Buckets s3Buckets;
 
-    public EmployeeService(EmployeeRepository employeeRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public EmployeeService(EmployeeRepository employeeRepository,
+                           UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           S3Service s3Service,
+                           S3Buckets s3Buckets) {
         this.employeeRepository = employeeRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.s3Service = s3Service;
+        this.s3Buckets = s3Buckets;
     }
 
     public List<EmployeeResponse> getAllEmployees() {
@@ -34,7 +45,6 @@ public class EmployeeService {
                         .lastName(employee.getLastName())
                         .email(employee.getEmail())
                         .position(employee.getPosition())
-                        .profileImageUrl(employee.getProfileImageUrl())
                         .build())
                 .toList();
     }
@@ -49,8 +59,19 @@ public class EmployeeService {
                 .lastName(employee.getLastName())
                 .email(employee.getEmail())
                 .position(employee.getPosition())
-                .profileImageUrl(employee.getProfileImageUrl())
                 .build();
+    }
+
+    public byte[] getEmployeeProfileImageById(Integer id) {
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+
+        // TODO: check if profile image is empty or null
+        String profileImageId = employee.getProfileImageId();
+        return s3Service.getObject(
+                s3Buckets.getEmployee(),
+                profileImageId
+        );
     }
 
     public EmployeeResponse getEmployeeByUsername(String username) {
@@ -64,8 +85,20 @@ public class EmployeeService {
                 .lastName(employee.getLastName())
                 .email(employee.getEmail())
                 .position(employee.getPosition())
-                .profileImageUrl(employee.getProfileImageUrl())
                 .build();
+    }
+
+    public byte[] getEmployeeProfileImageByUsername(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+        Employee employee = user.getEmployee();
+
+        // TODO: check if profile image is empty or null
+        String profileImageId = employee.getProfileImageId();
+        return s3Service.getObject(
+                s3Buckets.getEmployee(),
+                profileImageId
+        );
     }
 
     public void insertEmployee(RegisterEmployeeRequest request) {
@@ -81,7 +114,6 @@ public class EmployeeService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .position(request.getPosition())
-                .profileImageUrl(request.getProfileImageUrl())
                 .build();
 
         user.setEmployee(employee);
@@ -90,19 +122,27 @@ public class EmployeeService {
         userRepository.save(user);
     }
 
+    public void uploadEmployeeImage(Integer id, MultipartFile file) {
+        employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Employee not found"));
+
+        String profileImageId = UUID.randomUUID().toString();
+        try {
+            s3Service.putObject(
+                    s3Buckets.getEmployee(),
+                    "profile-image/%s/%s".formatted(id, profileImageId),
+                    file.getBytes()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public void updateEmployee(Integer id, UpdateEmployeeRequest request) {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Employee not found"));
 
         employee.setPosition(request.getPosition());
-        employeeRepository.save(employee);
-    }
-
-    public void updateEmployeesProfileImage(Integer id, UpdateEmployeeProfileImageRequest request) {
-        Employee employee = employeeRepository.findById(id)
-                .orElseThrow(() -> new IllegalStateException("Employee not found"));
-
-        employee.setProfileImageUrl(request.getProfileImageUrl());
         employeeRepository.save(employee);
     }
 

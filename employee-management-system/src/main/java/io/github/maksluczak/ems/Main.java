@@ -25,7 +25,7 @@ public class Main {
                              S3Service s3Service,
                              S3Buckets s3Buckets) {
         return args -> {
-            createRandomAdminAndEmployee(userRepository, passwordEncoder);
+            // createRandomAdminAndEmployee(userRepository, passwordEncoder);
             // testBucketUploadAndDownload(s3Service, s3Buckets);
         };
     }
@@ -45,7 +45,7 @@ public class Main {
                     .lastName("Nowak")
                     .email("admin@company.com")
                     .position("Chief Administrator")
-                    .profileImageUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=Admin")
+                    .profileImageId("https://api.dicebear.com/7.x/avataaars/svg?seed=Admin")
                     .user(adminUser)
                     .build();
 
@@ -67,7 +67,7 @@ public class Main {
                 .lastName("Kowalski")
                 .email(randomUsername + "@company.com")
                 .position("Software Engineer")
-                .profileImageUrl("https://api.dicebear.com/7.x/avataaars/svg?seed=" + randomUsername)
+                .profileImageId("https://api.dicebear.com/7.x/avataaars/svg?seed=" + randomUsername)
                 .user(employeeUser)
                 .build();
 

@@ -46,7 +46,6 @@ public class AuthenticationService {
                 .lastName(request.getLastName())
                 .email(request.getEmail())
                 .position(request.getPosition())
-                .profileImageUrl(request.getProfileImageUrl())
                 .build();
 
         user.setEmployee(employee);
@@ -83,7 +82,7 @@ public class AuthenticationService {
         String newToken = service.generateToken(user);
 
         return AuthenticationResponse.builder()
-                .token(jwtToken)
+                .token(newToken)
                 .build();
     }
 }

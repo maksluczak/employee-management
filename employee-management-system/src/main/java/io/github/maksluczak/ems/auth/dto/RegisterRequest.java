@@ -25,7 +25,6 @@ public class RegisterRequest {
     private String email;
     @NotNull
     private String position;
-    private String profileImageUrl;
     @Size(min=8)
     private String password;
 }

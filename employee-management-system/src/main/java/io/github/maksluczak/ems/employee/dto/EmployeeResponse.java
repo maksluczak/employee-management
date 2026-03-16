@@ -16,5 +16,4 @@ public class EmployeeResponse {
     private String lastName;
     private String email;
     private String position;
-    private String profileImageUrl;
 }

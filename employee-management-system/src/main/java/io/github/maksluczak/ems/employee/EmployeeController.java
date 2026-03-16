@@ -2,13 +2,14 @@ package io.github.maksluczak.ems.employee;
 
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
-import io.github.maksluczak.ems.employee.dto.UpdateEmployeeProfileImageRequest;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -34,11 +35,24 @@ public class EmployeeController {
         return ResponseEntity.ok(employeeService.getEmployeeById(id));
     }
 
+    @GetMapping("{id}/profile-image")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> getEmployeeProfileImage(@PathVariable Integer id) {
+        return ResponseEntity.ok(employeeService.getEmployeeProfileImageById(id));
+    }
+
     @GetMapping("/me")
     @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public ResponseEntity<EmployeeResponse> getMyProfile(Authentication authentication) {
         String username = authentication.getName();
         return ResponseEntity.ok(employeeService.getEmployeeByUsername(username));
+    }
+
+    @GetMapping("/me/profile-image")
+    @PreAuthorize("hasAnyRole('EMPLOYEE', 'ADMIN')")
+    public ResponseEntity<byte[]> getMyProfileImage(Authentication authentication) {
+        String username = authentication.getName();
+        return ResponseEntity.ok(employeeService.getEmployeeProfileImageByUsername(username));
     }
 
     @PostMapping
@@ -48,17 +62,20 @@ public class EmployeeController {
         return ResponseEntity.ok().build();
     }
 
+    @PostMapping(
+            value = "{id}/profile-image",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Void> uploadProfilePicture(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
+        employeeService.uploadEmployeeImage(id, file);
+        return ResponseEntity.ok().build();
+    }
+
     @PutMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateEmployee(@PathVariable Integer id, @Valid @RequestBody UpdateEmployeeRequest request) {
         employeeService.updateEmployee(id, request);
-        return ResponseEntity.ok().build();
-    }
-
-    @PutMapping({"{id}/profile-image"})
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> updateEmployeeProfileImage(@PathVariable Integer id, @RequestBody UpdateEmployeeProfileImageRequest request) {
-        employeeService.updateEmployeesProfileImage(id, request);
         return ResponseEntity.ok().build();
     }
 

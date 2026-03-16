@@ -25,7 +25,6 @@ public class RegisterEmployeeRequest {
     private String email;
     @NotBlank
     private String position;
-    private String profileImageUrl;
     @Size(min=8)
     private String password;
 }

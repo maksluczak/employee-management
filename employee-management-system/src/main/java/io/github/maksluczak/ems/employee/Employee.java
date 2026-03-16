@@ -19,7 +19,7 @@ public class Employee {
     private String lastName;
     private String email;
     private String position;
-    private String profileImageUrl;
+    private String profileImageId;
 
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
