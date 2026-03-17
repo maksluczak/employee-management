@@ -66,7 +66,10 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
-        // TODO: check if profile image is empty or null
+        if (employee.getProfileImageId().isBlank()) {
+            throw new IllegalStateException("Profile image not found.");
+        }
+
         String profileImageId = employee.getProfileImageId();
         return s3Service.getObject(
                 s3Buckets.getEmployee(),
@@ -93,7 +96,10 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
         Employee employee = user.getEmployee();
 
-        // TODO: check if profile image is empty or null
+        if (employee.getProfileImageId().isBlank()) {
+            throw new IllegalStateException("Profile image not found.");
+        }
+
         String profileImageId = employee.getProfileImageId();
         return s3Service.getObject(
                 s3Buckets.getEmployee(),
@@ -123,19 +129,26 @@ public class EmployeeService {
     }
 
     public void uploadEmployeeImage(Integer id, MultipartFile file) {
-        employeeRepository.findById(id)
+        Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("Employee not found"));
 
+        String previousImageId = employee.getProfileImageId();
+        if (previousImageId != null) {
+            s3Service.deleteObject(s3Buckets.getEmployee(), previousImageId);
+        }
+
         String profileImageId = UUID.randomUUID().toString();
+        String key = "profile-image/%s/%s".formatted(id, profileImageId);
         try {
             s3Service.putObject(
                     s3Buckets.getEmployee(),
-                    "profile-image/%s/%s".formatted(id, profileImageId),
+                    key,
                     file.getBytes()
             );
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        employeeRepository.updateProfileImageId(key, id);
     }
 
     public void updateEmployee(Integer id, UpdateEmployeeRequest request) {
