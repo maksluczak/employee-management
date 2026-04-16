@@ -2,7 +2,9 @@ package io.github.maksluczak.ems.employee;
 
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
+import io.github.maksluczak.ems.employee.dto.RegisterEmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
+import io.github.maksluczak.ems.employee.generator.EmployeeStringGenerator;
 import io.github.maksluczak.ems.s3.S3Buckets;
 import io.github.maksluczak.ems.s3.S3Service;
 import io.github.maksluczak.ems.user.Role;
@@ -22,16 +24,20 @@ public class EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final EmployeeStringGenerator stringGenerator;
     private final S3Service s3Service;
     private final S3Buckets s3Buckets;
 
     public EmployeeService(EmployeeRepository employeeRepository,
-                           UserRepository userRepository, PasswordEncoder passwordEncoder,
+                           UserRepository userRepository,
+                           PasswordEncoder passwordEncoder,
+                           EmployeeStringGenerator stringGenerator,
                            S3Service s3Service,
                            S3Buckets s3Buckets) {
         this.employeeRepository = employeeRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.stringGenerator = stringGenerator;
         this.s3Service = s3Service;
         this.s3Buckets = s3Buckets;
     }
@@ -66,7 +72,7 @@ public class EmployeeService {
         Employee employee = employeeRepository.findById(id)
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
-        if (employee.getProfileImageId().isBlank()) {
+        if (employee.getProfileImageId() == null || employee.getProfileImageId().isBlank()) {
             throw new IllegalStateException("Profile image not found.");
         }
 
@@ -96,7 +102,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
         Employee employee = user.getEmployee();
 
-        if (employee.getProfileImageId().isBlank()) {
+        if (employee.getProfileImageId() == null || employee.getProfileImageId().isBlank()) {
             throw new IllegalStateException("Profile image not found.");
         }
 
@@ -107,18 +113,25 @@ public class EmployeeService {
         );
     }
 
-    public void insertEmployee(RegisterEmployeeRequest request) {
+    public RegisterEmployeeResponse insertEmployee(RegisterEmployeeRequest request) {
+        String username = request.getFirstName().toLowerCase() +
+                request.getLastName().toLowerCase() + "_" +
+                stringGenerator.generateEmployeeId();
+        String email;
+        if (request.getRole().equals(Role.ADMIN)) { email = username + "@admin.company.com"; }
+        else { email = username + "@employee.company.com"; }
+        String password = stringGenerator.generateEmployeeSecurePassword();
         User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .role(Role.EMPLOYEE)
+                .username(username)
+                .email(email)
+                .password(passwordEncoder.encode(password))
+                .role(request.getRole())
                 .build();
 
         Employee employee = Employee.builder()
                 .firstName(request.getFirstName())
                 .lastName(request.getLastName())
-                .email(request.getEmail())
+                .email(email)
                 .position(request.getPosition())
                 .build();
 
@@ -126,6 +139,12 @@ public class EmployeeService {
         employee.setUser(user);
 
         userRepository.save(user);
+
+        return RegisterEmployeeResponse.builder()
+                .username(username)
+                .email(email)
+                .password(password)
+                .build();
     }
 
     public void uploadEmployeeImage(Integer id, MultipartFile file) {
@@ -160,6 +179,12 @@ public class EmployeeService {
     }
 
     public void deleteEmployee(Integer id) {
-        employeeRepository.deleteById(id);
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new IllegalStateException("Employee not found"));
+
+        if (employee.getProfileImageId() != null && !employee.getProfileImageId().isBlank()) {
+            s3Service.deleteObject(s3Buckets.getEmployee(), employee.getProfileImageId());
+        }
+        userRepository.delete(employee.getUser());
     }
 }

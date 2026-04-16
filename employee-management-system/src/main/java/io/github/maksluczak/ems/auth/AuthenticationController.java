@@ -2,7 +2,6 @@ package io.github.maksluczak.ems.auth;
 
 import io.github.maksluczak.ems.auth.dto.AuthenticationRequest;
 import io.github.maksluczak.ems.auth.dto.AuthenticationResponse;
-import io.github.maksluczak.ems.auth.dto.RegisterRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +18,6 @@ public class AuthenticationController {
 
     public AuthenticationController(AuthenticationService service) {
         this.service = service;
-    }
-
-    @PostMapping("/register")
-    public ResponseEntity<Void> registerAdmin(@Valid @RequestBody RegisterRequest request) {
-        service.registerAdmin(request);
-        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/authenticate")

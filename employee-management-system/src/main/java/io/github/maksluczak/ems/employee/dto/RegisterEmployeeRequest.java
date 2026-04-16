@@ -1,8 +1,7 @@
 package io.github.maksluczak.ems.employee.dto;
 
-import jakarta.validation.constraints.Email;
+import io.github.maksluczak.ems.user.Role;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,12 +18,7 @@ public class RegisterEmployeeRequest {
     @NotBlank
     private String lastName;
     @NotBlank
-    private String username;
-    @Email
-    @NotBlank
-    private String email;
+    private Role role;
     @NotBlank
     private String position;
-    @Size(min=8)
-    private String password;
 }

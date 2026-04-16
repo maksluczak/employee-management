@@ -21,13 +21,34 @@ public class Main {
 
     @Bean
     CommandLineRunner runner(UserRepository userRepository,
-                             PasswordEncoder passwordEncoder,
-                             S3Service s3Service,
-                             S3Buckets s3Buckets) {
+                             PasswordEncoder passwordEncoder) {
         return args -> {
-            // createRandomAdminAndEmployee(userRepository, passwordEncoder);
-            // testBucketUploadAndDownload(s3Service, s3Buckets);
+            createSystemFirstAdmin(userRepository, passwordEncoder);
         };
+    }
+
+    public static void createSystemFirstAdmin(UserRepository userRepository,
+                                                    PasswordEncoder passwordEncoder) {
+        if (!userRepository.existsByRole(Role.ADMIN)) {
+            User adminUser = User.builder()
+                    .username("admin")
+                    .email("admin@company.com")
+                    .password(passwordEncoder.encode("admin123"))
+                    .role(Role.ADMIN)
+                    .build();
+
+            Employee adminEmployee = Employee.builder()
+                    .firstName("System")
+                    .lastName("Admin")
+                    .email("admin@company.com")
+                    .position("Admin")
+                    .user(adminUser)
+                    .build();
+
+            adminUser.setEmployee(adminEmployee);
+            userRepository.save(adminUser);
+            System.out.println("Dodano konto administratora.");
+        }
     }
 
     private static void createRandomAdminAndEmployee(UserRepository userRepository,
