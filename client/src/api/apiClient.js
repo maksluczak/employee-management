@@ -58,7 +58,7 @@ class ApiClient {
     put(endpoint, data, headers) { return this.#request("PUT", endpoint, { data, headers }); }
     patch(endpoint, data, headers) { return this.#request("PATCH", endpoint, { data, headers }); }
     delete(endpoint, headers) { return this.#request("DELETE", endpoint, { headers }); }
-    getImageUrl = (url) => { return `${this.#backendUrl}/${url}`; }
+    getImageUrl = (url) => { return `${this.#backendUrl}/${url}/profile-image`; }
 }
 
 export const apiClient = new ApiClient();

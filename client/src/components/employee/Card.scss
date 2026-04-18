@@ -1,0 +1,51 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 280px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  background: #fff;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-5px);
+  }
+
+  .employee-image {
+    width: 100%;
+    height: 200px;
+    background-color: #f0f0f0;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .employee-info {
+    padding: 20px;
+
+    &-title {
+      margin: 0 0 10px 0;
+      font-size: 1.4rem;
+      color: #333;
+    }
+
+    &-text {
+      margin: 5px 0;
+      font-size: 0.9rem;
+      color: #666;
+
+      strong {
+        color: #222;
+      }
+    }
+
+    .id-badge {
+      margin-top: 15px;
+      color: #999;
+    }
+  }
+}
