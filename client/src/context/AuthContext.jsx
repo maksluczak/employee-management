@@ -42,7 +42,10 @@ export const AuthProvider = ({ children }) => {
     useEffect(() => {
         apiClient.setToken(token);
         apiClient.onTokenExpired(refreshToken);
-    }, [token, refreshToken]);
+        if (!token) {
+            navigate("/");
+        }
+    }, [token, refreshToken, navigate]);
 
     const login = useCallback((token, role, shouldRedirect = true) => {
         setToken(token);

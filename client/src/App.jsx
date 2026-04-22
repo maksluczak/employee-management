@@ -2,7 +2,6 @@ import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import LoginPage from "./pages/LoginPage.jsx";
 import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
 import EmployeeDashboardPage from "./pages/EmployeeDashboardPage.jsx";
-import Navbar from "./components/layout/Navbar.jsx";
 import {AuthProvider} from "./context/AuthContext.jsx";
 
 function App() {
@@ -10,7 +9,6 @@ function App() {
         <Router>
             <AuthProvider>
                 <div className='app'>
-                    <Navbar />
                     <main className='main'>
                         <Routes>
                             <Route index element={<LoginPage />} />

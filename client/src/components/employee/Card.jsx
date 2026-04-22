@@ -14,16 +14,13 @@ export default function Card({ employeeId }) {
                 const data = await apiClient.get(`/employees/${employeeId}`);
                 setEmployee(data);
 
-                const response = await fetch(`http://localhost:8080/api/v1/employees/${employeeId}/profile-image`, {
-                    headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
-                    }
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = URL.createObjectURL(blob);
-                    setImgSrc(url);
+                try {
+                    const imageBlobUrl = await apiClient.getEmployeeImage(employeeId);
+                    setImgSrc(imageBlobUrl);
+                } catch (imageError) {
+                    console.warn("Employee image could not be found.");
+                    console.error(imageError);
+                    setImgSrc(null);
                 }
             } catch (error) {
                 console.error("Error fetching employee card data:", error);
@@ -35,9 +32,11 @@ export default function Card({ employeeId }) {
         fetchEmployeeData();
 
         return () => {
-            if (imgSrc) URL.revokeObjectURL(imgSrc);
+            if (imgSrc) {
+                URL.revokeObjectURL(imgSrc);
+            }
         };
-    }, [employeeId, imgSrc]);
+    }, [employeeId]);
 
     if (loading) return <div className="card-loader">Loading...</div>;
     if (!employee) return <div className="card-error">Employee not found</div>;
