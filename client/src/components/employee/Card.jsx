@@ -1,6 +1,6 @@
 import "./Card.scss";
-import {useEffect, useState} from "react";
-import {apiClient} from "../../api/apiClient.js";
+import { useEffect, useState } from "react";
+import { apiClient } from "../../api/apiClient.js";
 
 export default function Card({ employeeId }) {
     const [employee, setEmployee] = useState(null);
@@ -16,7 +16,7 @@ export default function Card({ employeeId }) {
 
                 const response = await fetch(`http://localhost:8080/api/v1/employees/${employeeId}/profile-image`, {
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}` // Zakładając, że tam trzymasz token
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     }
                 });
 
@@ -33,6 +33,7 @@ export default function Card({ employeeId }) {
         }
 
         fetchEmployeeData();
+
         return () => {
             if (imgSrc) URL.revokeObjectURL(imgSrc);
         };
@@ -45,23 +46,35 @@ export default function Card({ employeeId }) {
         <div className="card">
             <div className="employee-image">
                 <img
-                    src={imgSrc || 'https://via.placeholder.com/150'}
+                    src={imgSrc || '/default-user.png'}
                     alt={`${employee.firstName} ${employee.lastName}`}
                 />
             </div>
             <div className="employee-info">
+                <div className="id-badge">
+                    <small>#{employee.id}</small>
+                </div>
+
                 <h2 className="employee-info-title">
                     {employee.firstName} {employee.lastName}
                 </h2>
-                <p className="employee-info-text position">
-                    <strong>Position:</strong> {employee.position}
-                </p>
+
                 <p className="employee-info-text email">
-                    <strong>Email:</strong> {employee.email}
+                    {employee.email}
                 </p>
-                <p className="employee-info-text id-badge">
-                    <small>ID: #{employee.id}</small>
+
+                <p className="employee-info-text position">
+                    {employee.position}
                 </p>
+            </div>
+
+            <div className="employee-management">
+                <button className="employee-update">
+                    Update
+                </button>
+                <button className="employee-delete">
+                    Delete
+                </button>
             </div>
         </div>
     );

@@ -2,9 +2,8 @@ import Card from "../components/employee/Card.jsx";
 
 export default function AdminDashboardPage() {
     return (
-        <>
-            <h1>Admin Dashboard</h1>
+        <section className="admin-dashboard-container">
             <Card employeeId={1} />
-        </>
+        </section>
     )
 }
