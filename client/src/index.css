@@ -7,9 +7,9 @@
     --charcoal: #383838;
     --border: #e4e4e4;
 
-    --font-display: 'Syne', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --radius: 12px;
+    --font-display: 'Roboto', sans-serif;
+    --font-body: 'Open Sans', sans-serif;
+    --radius: 8px;
     --shadow: 0 4px 20px rgba(56, 56, 56, 0.08);
 }
 
