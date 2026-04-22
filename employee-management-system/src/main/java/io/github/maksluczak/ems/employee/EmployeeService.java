@@ -10,9 +10,11 @@ import io.github.maksluczak.ems.s3.S3Service;
 import io.github.maksluczak.ems.user.Role;
 import io.github.maksluczak.ems.user.User;
 import io.github.maksluczak.ems.user.UserRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.util.List;
@@ -73,7 +75,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException("User not found"));
 
         if (employee.getProfileImageId() == null || employee.getProfileImageId().isBlank()) {
-            throw new IllegalStateException("Profile image not found.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee has no profile image");
         }
 
         String profileImageId = employee.getProfileImageId();
@@ -103,7 +105,7 @@ public class EmployeeService {
         Employee employee = user.getEmployee();
 
         if (employee.getProfileImageId() == null || employee.getProfileImageId().isBlank()) {
-            throw new IllegalStateException("Profile image not found.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee has no profile image");
         }
 
         String profileImageId = employee.getProfileImageId();
