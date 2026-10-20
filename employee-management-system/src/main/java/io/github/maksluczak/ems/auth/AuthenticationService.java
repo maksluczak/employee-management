@@ -5,6 +5,7 @@ import io.github.maksluczak.ems.auth.dto.AuthenticationResponse;
 import io.github.maksluczak.ems.config.JwtService;
 import io.github.maksluczak.ems.user.User;
 import io.github.maksluczak.ems.user.UserRepository;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -17,7 +18,9 @@ public class AuthenticationService {
     private final JwtService service;
     private final AuthenticationManager authenticationManager;
 
-    public AuthenticationService(UserRepository repository, JwtService service, AuthenticationManager authenticationManager) {
+    public AuthenticationService(UserRepository repository,
+                                 JwtService service,
+                                 AuthenticationManager authenticationManager) {
         this.repository = repository;
         this.service = service;
         this.authenticationManager = authenticationManager;
@@ -45,13 +48,14 @@ public class AuthenticationService {
     public AuthenticationResponse refresh(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            throw new IllegalStateException("Missing or invalid Authorization header");
+            throw new JwtException("Missing or invalid Authorization header");
         }
 
         String jwtToken = authHeader.substring(7);
 
-        String username = service.extractUsername(jwtToken);
-        User user = repository.findByUsername(username).orElseThrow(() -> new IllegalStateException("User not found"));
+        String username = service.extractUsernameForRefresh(jwtToken);
+        User user = repository.findByUsername(username)
+                .orElseThrow(() -> new JwtException("User from token no longer exists"));
 
         String newToken = service.generateToken(user);
 

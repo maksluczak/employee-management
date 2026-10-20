@@ -1,6 +1,8 @@
 package io.github.maksluczak.ems.config;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -8,7 +10,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -17,7 +18,13 @@ import java.util.function.Function;
 @Service
 public class JwtService {
 
-    private static final String SECRET_KEY = "665da784b13a00f11318bc79853e6f282f113965233e66d9a3cab8da410b36e75245fb9af26ebafe130fbeeafba80e9eb462696f501498042e6115a4ef8a4532";
+    private final JwtProperties jwtProperties;
+    private final SecretKey signInKey;
+
+    public JwtService(JwtProperties properties) {
+        this.jwtProperties = properties;
+        this.signInKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(properties.secret()));
+    }
 
     public String extractUsername(String token) {
         return extractClaim(token, Claims::getSubject);
@@ -33,19 +40,34 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
+        long now = System.currentTimeMillis();
         return Jwts
                 .builder()
                 .claims(extraClaims)
                 .subject(userDetails.getUsername())
-                .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 24))
-                .signWith(getSingInKey())
+                .issuedAt(new Date(now))
+                .expiration(new Date(now + jwtProperties.expiration().toMillis()))
+                .signWith(signInKey)
                 .compact();
+    }
+
+    public String extractUsernameForRefresh(String token) {
+        Claims claims;
+        try {
+            claims = extractAllClaims(token);
+        } catch (ExpiredJwtException e) {
+            claims = e.getClaims();
+        }
+
+        long refreshDeadline = claims.getExpiration().getTime() + jwtProperties.refreshWindow().toMillis();
+        if (System.currentTimeMillis() > refreshDeadline) {
+            throw new JwtException("Token is too old to be refreshed");
+        }
+        return claims.getSubject();
     }
 
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
-
         return (username.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
@@ -59,14 +81,9 @@ public class JwtService {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parser()
-                .verifyWith((SecretKey) getSingInKey())
+                .verifyWith(signInKey)
                 .build()
                 .parseSignedClaims(token)
                 .getPayload();
-    }
-
-    private Key getSingInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
-        return Keys.hmacShaKeyFor(keyBytes);
     }
 }
