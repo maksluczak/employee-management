@@ -80,7 +80,7 @@ public class EmployeeService {
 
         String profileImageId = employee.getProfileImageId();
         return s3Service.getObject(
-                s3Buckets.getEmployee(),
+                s3Buckets.employee(),
                 profileImageId
         );
     }
@@ -110,7 +110,7 @@ public class EmployeeService {
 
         String profileImageId = employee.getProfileImageId();
         return s3Service.getObject(
-                s3Buckets.getEmployee(),
+                s3Buckets.employee(),
                 profileImageId
         );
     }
@@ -155,14 +155,14 @@ public class EmployeeService {
 
         String previousImageId = employee.getProfileImageId();
         if (previousImageId != null) {
-            s3Service.deleteObject(s3Buckets.getEmployee(), previousImageId);
+            s3Service.deleteObject(s3Buckets.employee(), previousImageId);
         }
 
         String profileImageId = UUID.randomUUID().toString();
         String key = "profile-image/%s/%s".formatted(id, profileImageId);
         try {
             s3Service.putObject(
-                    s3Buckets.getEmployee(),
+                    s3Buckets.employee(),
                     key,
                     file.getBytes()
             );
@@ -185,7 +185,7 @@ public class EmployeeService {
                 .orElseThrow(() -> new IllegalStateException("Employee not found"));
 
         if (employee.getProfileImageId() != null && !employee.getProfileImageId().isBlank()) {
-            s3Service.deleteObject(s3Buckets.getEmployee(), employee.getProfileImageId());
+            s3Service.deleteObject(s3Buckets.employee(), employee.getProfileImageId());
         }
         userRepository.delete(employee.getUser());
     }

@@ -1,17 +1,7 @@
 package io.github.maksluczak.ems.s3;
 
-import lombok.Getter;
-import lombok.Setter;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Configuration
-@Getter
-@Setter
-public class S3Buckets {
-
-    private String employee;
-
-    public S3Buckets() {
-        this.employee = "fs-maksluczak-client-test";
-    }
+@ConfigurationProperties(prefix = "aws.s3.buckets")
+public record S3Buckets(String employee) {
 }
