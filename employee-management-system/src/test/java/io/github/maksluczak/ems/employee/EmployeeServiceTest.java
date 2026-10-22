@@ -81,7 +81,7 @@ public class EmployeeServiceTest {
                 testFileContent);
 
         when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
-        when(s3Buckets.getEmployee()).thenReturn("fs-maksluczak-client-test");
+        when(s3Buckets.employee()).thenReturn("fs-maksluczak-client-test");
 
         employeeService.uploadEmployeeImage(employeeId, file);
 
