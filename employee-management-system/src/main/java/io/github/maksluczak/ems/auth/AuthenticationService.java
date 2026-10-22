@@ -3,6 +3,7 @@ package io.github.maksluczak.ems.auth;
 import io.github.maksluczak.ems.auth.dto.AuthenticationRequest;
 import io.github.maksluczak.ems.auth.dto.AuthenticationResponse;
 import io.github.maksluczak.ems.config.JwtService;
+import io.github.maksluczak.ems.exception.ResourceNotFoundException;
 import io.github.maksluczak.ems.user.User;
 import io.github.maksluczak.ems.user.UserRepository;
 import io.jsonwebtoken.JwtException;
@@ -34,8 +35,8 @@ public class AuthenticationService {
                 )
         );
 
-        var user = repository.findByUsername(request.getUsername())
-                .orElseThrow();
+        User user = repository.findByUsername(request.getUsername())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         String jwtToken = service.generateToken(user);
 

@@ -1,12 +1,19 @@
 package io.github.maksluczak.ems.employee;
 
 import io.github.maksluczak.ems.employee.dto.EmployeeResponse;
+import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
+import io.github.maksluczak.ems.employee.dto.RegisterEmployeeResponse;
+import io.github.maksluczak.ems.employee.generator.EmployeeStringGenerator;
+import io.github.maksluczak.ems.exception.BadRequestException;
+import io.github.maksluczak.ems.exception.ResourceNotFoundException;
 import io.github.maksluczak.ems.s3.S3Buckets;
 import io.github.maksluczak.ems.s3.S3Service;
 import io.github.maksluczak.ems.user.Role;
 import io.github.maksluczak.ems.user.User;
+import io.github.maksluczak.ems.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -18,9 +25,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class EmployeeServiceTest {
@@ -28,7 +35,11 @@ public class EmployeeServiceTest {
     @Mock
     private EmployeeRepository employeeRepository;
     @Mock
+    private UserRepository userRepository;
+    @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock
+    private EmployeeStringGenerator stringGenerator;
     @Mock
     private S3Service s3Service;
     @Mock
@@ -36,60 +47,83 @@ public class EmployeeServiceTest {
     @InjectMocks
     private EmployeeService employeeService;
 
-    @Test
-    public void testCreateUserAndEmployeeAndGetHimById() {
+    public Employee employeeWithUser(int id, String username) {
         User user = User.builder()
-                .username("johnsmith1")
-                .email("johnsmith1@company.com")
-                .password(passwordEncoder.encode("p@ssword123"))
+                .id(id)
+                .username(username)
                 .role(Role.EMPLOYEE)
                 .build();
 
         Employee employee = Employee.builder()
+                .id(id)
                 .firstName("John")
                 .lastName("Smith")
-                .email("johnsmith1@company.com")
-                .position("Senior Software Java Developer")
+                .position("Sr. Java Engineer")
+                .user(user)
                 .build();
-
         user.setEmployee(employee);
-        employee.setUser(user);
-
-        when(employeeRepository.findById(1)).thenReturn(Optional.of(employee));
-        EmployeeResponse result = employeeService.getEmployeeById(1);
-
-        assertThat(result)
-                .usingRecursiveComparison()
-                .ignoringFields("profileImageId", "password", "user")
-                .isEqualTo(employee);
+        return employee;
     }
 
     @Test
-    public void testUploadNewImageAndDeleteOldOne() {
-        int employeeId = 1;
-        String previousImageKey = "profile-image/1/old-uuid";
-        Employee employee = Employee.builder()
-                .id(employeeId)
-                .profileImageId(previousImageKey)
-                .build();
+    void testInsertEmployeeGeneratesCredentialsAndEncodesPassword() {
+        when(stringGenerator.generateEmployeeId()).thenReturn("AB12c");
+        when(stringGenerator.generateEmployeeSecurePassword()).thenReturn("Secret#Pass12");
+        when(passwordEncoder.encode("Secret#Pass12")).thenReturn("encoded");
+        RegisterEmployeeRequest request =
+                new RegisterEmployeeRequest("Julian", "Pike", Role.EMPLOYEE, "Tester");
 
-        byte[] testFileContent = "test-file".getBytes();
-        MultipartFile file = new MockMultipartFile(
-                "file",
-                "test.png",
-                "image/png",
-                testFileContent);
+        RegisterEmployeeResponse response = employeeService.insertEmployee(request);
 
-        when(employeeRepository.findById(employeeId)).thenReturn(Optional.of(employee));
-        when(s3Buckets.employee()).thenReturn("fs-maksluczak-client-test");
+        assertThat(response.getUsername()).isEqualTo("julianpike_AB12c");
+        assertThat(response.getEmail()).isEqualTo("julianpike_AB12c@employee.company.com");
+        assertThat(response.getPassword()).isEqualTo("Secret#Pass12");
 
-        employeeService.uploadEmployeeImage(employeeId, file);
+        ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
+        verify(userRepository).save(captor.capture());
+        assertThat(captor.getValue().getPassword()).isEqualTo("encoded");
+        assertThat(captor.getValue().getEmployee().getUser()).isSameAs(captor.getValue());
+    }
 
-        verify(s3Service).deleteObject("fs-maksluczak-client-test", previousImageKey);
-        verify(s3Service).putObject(
-                eq("fs-maksluczak-client-test"),
-                contains("profile-image/" + employeeId),
-                eq(testFileContent));
-        verify(employeeRepository).updateProfileImageId(anyString(), eq(employeeId));
+    @Test
+    void testGetEmployeeByIdThrowsWhenMissing() {
+        when(employeeRepository.findById(10)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> employeeService.getEmployeeById(10))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void testUploadNewImageAndDeleteOldOne() {
+        Employee employee = employeeWithUser(1, "john");
+        employee.setProfileImageId("profile-image/1/old-uuid");
+        byte[] content = "test-file".getBytes();
+        MockMultipartFile file = new MockMultipartFile("file", "test.png", "image/png", content);
+        when(employeeRepository.findById(1)).thenReturn(Optional.of(employee));
+        when(s3Buckets.employee()).thenReturn("test-bucket");
+
+        employeeService.uploadEmployeeImage(1, file);
+
+        verify(s3Service).putObject(eq("test-bucket"), contains("profile-image/1/"), eq(content));
+        verify(employeeRepository).updateProfileImageId(contains("profile-image/1/"), eq(1));
+        verify(s3Service).deleteObject("test-bucket", "profile-image/1/old-uuid");
+    }
+
+    @Test
+    void testUploadRejectsNonImageFile() {
+        MockMultipartFile file = new MockMultipartFile("file", "cv.pdf", "application/pdf", "pdf".getBytes());
+
+        assertThatThrownBy(() -> employeeService.uploadEmployeeImage(1, file))
+                .isInstanceOf(BadRequestException.class);
+        verifyNoInteractions(s3Service);
+    }
+
+    @Test
+    void testAdminCannotDeleteOwnAccount() {
+        when(employeeRepository.findById(1)).thenReturn(Optional.of(employeeWithUser(1, "admin")));
+
+        assertThatThrownBy(() -> employeeService.deleteEmployee(1, "admin"))
+                .isInstanceOf(BadRequestException.class);
+        verify(userRepository, never()).delete(any());
     }
 }
