@@ -5,6 +5,7 @@ import io.github.maksluczak.ems.employee.dto.RegisterEmployeeRequest;
 import io.github.maksluczak.ems.employee.dto.RegisterEmployeeResponse;
 import io.github.maksluczak.ems.employee.dto.UpdateEmployeeRequest;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -59,7 +60,7 @@ public class EmployeeController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<RegisterEmployeeResponse> createEmployee(@Valid @RequestBody RegisterEmployeeRequest request) {
-        return ResponseEntity.ok(employeeService.insertEmployee(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(employeeService.insertEmployee(request));
     }
 
     @PostMapping(
@@ -69,20 +70,20 @@ public class EmployeeController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> uploadProfilePicture(@PathVariable Integer id, @RequestParam("file") MultipartFile file) {
         employeeService.uploadEmployeeImage(id, file);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> updateEmployee(@PathVariable Integer id, @Valid @RequestBody UpdateEmployeeRequest request) {
         employeeService.updateEmployee(id, request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.noContent().build();
     }
 
     @DeleteMapping("{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteEmployee(@PathVariable Integer id) {
-        employeeService.deleteEmployee(id);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<Void> deleteEmployee(@PathVariable Integer id, Authentication authentication) {
+        employeeService.deleteEmployee(id, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 }

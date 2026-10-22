@@ -26,15 +26,7 @@ public class EmployeeStringGenerator {
         for (int i = 0; i < 5; i++) {
             id.append(allChars.charAt(random.nextInt(allChars.length())));
         }
-
-        List<Character> letters = id.chars()
-                .mapToObj(c -> (char) c)
-                .collect(Collectors.toList());
-        Collections.shuffle(letters, random);
-
-        return letters.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining());
+        return id.toString();
     }
 
     public String generateEmployeeSecurePassword() {
@@ -55,6 +47,6 @@ public class EmployeeStringGenerator {
         };
         CharacterRule specials = new CharacterRule(specialChars, 2);
 
-        return gen.generatePassword(8, lowerCase, upperCase, digits, specials);
+        return gen.generatePassword(12, lowerCase, upperCase, digits, specials);
     }
 }
