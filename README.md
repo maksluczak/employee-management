@@ -28,7 +28,7 @@ The `client/` folder contains a deliberately small React app. Its only purpose i
 * **JUnit 5, Mockito, MockMvc, H2**
 
 **Frontend** (`client/`)
-* **React 19** + **Vite**
+* **React** + **Vite**
 
 **Infrastructure**
 * **Docker / Docker Compose**
