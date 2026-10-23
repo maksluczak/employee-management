@@ -1,25 +1,31 @@
-import {BrowserRouter as Router, Routes, Route} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getSession, setSession, whenSessionEnds } from "./api.js";
 import LoginPage from "./pages/LoginPage.jsx";
-import AdminDashboardPage from "./pages/AdminDashboardPage.jsx";
-import EmployeeDashboardPage from "./pages/EmployeeDashboardPage.jsx";
-import {AuthProvider} from "./context/AuthContext.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
+import EmployeePage from "./pages/EmployeePage.jsx";
 
-function App() {
+export default function App() {
+    const [session, setSessionState] = useState(getSession());
+
+    useEffect(() => whenSessionEnds(() => setSessionState(null)), []);
+
+    const logout = () => {
+        setSession(null);
+        setSessionState(null);
+    };
+
+    if (!session) return <LoginPage onLogin={setSessionState} />;
+
     return (
-        <Router>
-            <AuthProvider>
-                <div className='app'>
-                    <main className='main'>
-                        <Routes>
-                            <Route index element={<LoginPage />} />
-                            <Route path='/admin-dashboard' element={<AdminDashboardPage />} />
-                            <Route path='/employee-dashboard' element={<EmployeeDashboardPage />} />
-                        </Routes>
-                    </main>
-                </div>
-            </AuthProvider>
-        </Router>
-    )
+        <>
+            <header className="topbar">
+                <strong className="brand">Employee Management</strong>
+                <span className="tag">{session.role}</span>
+                <button className="btn btn-pink" onClick={logout}>Log out</button>
+            </header>
+            <main className="container">
+                {session.role === "ADMIN" ? <AdminPage /> : <EmployeePage />}
+            </main>
+        </>
+    );
 }
-
-export default App

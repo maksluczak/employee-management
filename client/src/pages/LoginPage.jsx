@@ -1,69 +1,38 @@
-import './LoginPage.scss';
-import {useAuth} from "../context/useAuth.js";
-import {useState} from "react";
-import {apiClient} from "../api/apiClient.js";
+import { useState } from "react";
+import { api } from "../api.js";
 
-export default function LoginPage() {
-    const [credentials, setCredentials] = useState({username: "", password: ""});
-    const [isLoading, setIsLoading] = useState(false);
-    const { login } = useAuth();
+export default function LoginPage({ onLogin }) {
+    const [form, setForm] = useState({ username: "", password: "" });
+    const [error, setError] = useState(null);
 
-    const handleChange = (e) => {
-        setCredentials({...credentials, [e.target.name]: e.target.value});
-    }
+    const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setIsLoading(true);
-
+        setError(null);
         try {
-            const response = await apiClient.post("/auth/authenticate", credentials);
-
-            if (response?.token) {
-                login(response.token, response.role || "USER");
-                alert("Logged in successfully!");
-            }
+            onLogin(await api.login(form.username, form.password));
         } catch (err) {
-            console.error(err);
-            alert(err.message || "Something went wrong!");
-        } finally {
-            setIsLoading(false);
+            setError(err.message);
         }
-    }
+    };
+
     return (
-        <section className='login-page'>
-            <form className='login-form' onSubmit={handleSubmit}>
-                <h2>Sign In</h2>
-                <div className='input-group'>
-                    <label htmlFor='username'>Username</label>
-                    <input
-                        id='username'
-                        name='username'
-                        type='text'
-                        onChange={handleChange}
-                        value={credentials.username}
-                        required
-                    />
-                </div>
-                <div className='input-group'>
-                    <label htmlFor='password'>Password</label>
-                    <input
-                        id='password'
-                        name='password'
-                        type='password'
-                        onChange={handleChange}
-                        value={credentials.password}
-                        required
-                    />
-                </div>
-                <button
-                    className='login-button'
-                    type='submit'
-                    disabled={isLoading}
-                >
-                    {isLoading ? "Logging in..." : "Login"}
-                </button>
+        <main className="login">
+            <form className="card" onSubmit={handleSubmit}>
+                <h1>Sign in</h1>
+                <label>
+                    Username
+                    <input name="username" value={form.username} onChange={handleChange} required />
+                </label>
+                <label>
+                    Password
+                    <input name="password" type="password" value={form.password} onChange={handleChange} required />
+                </label>
+                {error && <p className="alert">{error}</p>}
+                <button className="btn btn-green">Log in</button>
+                <p className="muted">Default admin: <code>admin</code> / <code>admin123</code></p>
             </form>
-        </section>
+        </main>
     );
 }
